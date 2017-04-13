@@ -10,12 +10,14 @@
 #define LPin  GPIO_Pin_7|GPIO_Pin_6|GPIO_Pin_5|GPIO_Pin_4
 //#define HRead();  GPIO_ReadInputData(GPIOD);
 //#define LRead();  GPIO_ReadInputData(GPIOD);
-void KEY_Init(void);
+void KEYInit(void);
 u8 KEY_Scan(void);
+u8 HL_Scan(void);
 
 void HL_Init_HScan(void);
 void HL_Init_LScan(void);
 
-u8 HL_Scan(void);
-void TIM2_Int_Init(u16 arr,u16 psc);
+extern u8 key_value;
+extern u8 key;
+
 #endif

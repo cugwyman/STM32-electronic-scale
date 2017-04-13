@@ -1,10 +1,9 @@
 #include "timer.h"
-//#include "led.h"
 #include "key.h"
 #include "usart.h"
+#include "System.h"
 
-u32 Read;
-u32 ReadValue=0;
+u8 Read;
 //通用定时器3中断初始化
 //这里时钟选择为APB1的2倍，而APB1为36M
 //arr：自动重装值。
@@ -33,31 +32,21 @@ void TIM3_Int_Init(u16 arr,u16 psc)
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //IRQ通道被使能
 	NVIC_Init(&NVIC_InitStructure);  //初始化NVIC寄存器
 
-
 	TIM_Cmd(TIM3, ENABLE);  //使能TIMx					 
 }
+
 //定时器3中断服务程序
 void TIM3_IRQHandler(void)   //TIM3中断
 {
 	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  //检查TIM3更新中断发生与否
-		{
+	{
       	TIM_ClearITPendingBit(TIM3, TIM_IT_Update  );  //清除TIMx更新中断标志 
-       
-
-
-			Read=scan_MatrixKey();
-			   if(Read!=20)		
-	 {
-	  ReadValue=Read;
-		 Read=20;
-	 }
-	 
-//    else
-//   		 	  ReadValue=0;
-					
-		   printf("%d hao\n",ReadValue);
-    
-		}
+        if( KEY_Scan() )//得到键值
+        {
+            Read = HL_Scan();
+        }
+        Weight();
+	}
 }
 
 

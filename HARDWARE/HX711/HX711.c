@@ -3,25 +3,12 @@
 #include "usart.h"
 
 u32 HX711_Buffer;
-//u32 Weight_Maopi;
-//s32 Weight_Shiwu;
 float Weight_Maopi;
 float Weight_Shiwu;
 u8 Flag_Error = 0;
 
-//校准参数
-//因为不同的传感器特性曲线不是很一致，因此，每一个传感器需要矫正这里这个参数才能使测量值很准确。
-//当发现测试出来的重量偏大时，增加该数值。
-//如果测试出来的重量偏小时，减小改数值。
-//该值可以为小数
-#define GapValueL 1597.2
-#define GapValueM1 1680.2
-#define GapValueM2 1629.2
-#define GapValueM3 1636.2
-#define GapValueH 1678.2
 
-
-void Init_HX711pin(void)
+void HX711Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);	 //使能PF端口时钟
@@ -41,7 +28,6 @@ void Init_HX711pin(void)
 }
 
 
-
 //****************************************************
 //读取HX711
 //****************************************************
@@ -54,7 +40,7 @@ u32 HX711_Read(void)	//增益128
   	HX711_SCK=0; 
   	count=0; 
   	while(HX711_DOUT); 
-  for(i=0;i<24;i++)
+    for(i=0;i<24;i++)
 	{ 
 	  	HX711_SCK=1; 
 	  	count=count<<1; 
@@ -90,10 +76,6 @@ void Get_Weight(void)
 		Weight_Shiwu = HX711_Buffer;
 		Weight_Shiwu = Weight_Shiwu - Weight_Maopi;				//获取实物的AD采样数值。
 	
-//		Weight_Shiwu = (s32)((float)Weight_Shiwu/GapValue); 	//计算实物的实际重量
-//																		//因为不同的传感器特性曲线不一样，因此，每一个传感器需要矫正这里的GapValue这个除数。
-//																		//当发现测试出来的重量偏大时，增加该数值。
-//																		//如果测试出来的重量偏小时，减小改数值。
 		if(Weight_Shiwu<=100000)
 			Weight_Shiwu = ((float)Weight_Shiwu/GapValueL); 	//计算实物的实际重量
 		
@@ -108,41 +90,41 @@ void Get_Weight(void)
 
 		if(Weight_Shiwu>=700000)
 			Weight_Shiwu = ((float)Weight_Shiwu/GapValueH); 	//计算实物的实际重量
+    }
 
-//	if(Weight_Shiwu <= 0)			Weight_Shiwu=0;
-
-		//																		//因为不同的传感器特性曲线不一样，因此，每一个传感器需要矫正这里的GapValue这个除数。
-//																		//当发现测试出来的重量偏大时，增加该数值。
-//																		//如果测试出来的重量偏小时，减小改数值。
 }
 
-	
-}
-
-float Get_Weight_Average(u8 times)//中位数滤波，times必须为奇数
+//中位数滤波，times必须为奇数
+//BubbleSort冒泡排序
+//@param flag	优化算法
+float Get_Weight_Average(u8 times)
 {
 	float temp_val;
 	float val_buf[11];
 	u8 t,i,j;
-	for(t=0;t<times;t++)
+    int flag = 1;
+
+	for(t=0; t<times; t++)
 	{
 		Get_Weight();
-		val_buf[t]=Weight_Shiwu;
+		val_buf[t] = Weight_Shiwu;
 		delay_ms(5);
 	}
-	for(j=0;j<times-1;j++)          //冒泡
+	for(j = 0; j < times && flag; j++)       
+	{
+        flag = 0;
+		for(i = 1; i< times- j; i++)
 		{
-			for(i=0;i<times-1;i++)
+			if(val_buf[i] > val_buf[i+1])
 			{
-				if(val_buf[i]>val_buf[i+1])
-				{
-				 temp_val=val_buf[i];
-					val_buf[i]=val_buf[i+1];
-					val_buf[i+1]=temp_val;
-				}
-			} 	 
+                temp_val=val_buf[i];
+				val_buf[i]=val_buf[i+1];
+				val_buf[i+1]=temp_val;
+                flag = 1;
+			}
+		} 	 
     }
-      return val_buf[(times-1)/2];//取中值
+    return val_buf[(times-1)/2];//取中值
 }
 
 
